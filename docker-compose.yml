@@ -1,0 +1,119 @@
+name: grafana_rights
+
+volumes:
+  data_grafana:
+  data_loki:
+
+services:
+  # GRAFANA --------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:          [ "3000:3000/tcp" ]
+    healthcheck:
+      test:     "wget -q --spider 'http://grafana:3000/api/health' 1>/dev/null 2>&1"
+      interval:     1s
+      timeout:      1s
+      start_period: 20s
+    volumes:
+      - data_grafana:/var/lib/grafana:rw
+    environment:
+      - GF_SECURITY_ADMIN_USER=grafana
+      - GF_SECURITY_ADMIN_PASSWORD=superuser
+      - GF_USERS_DEFAULT_THEME=light
+      - GF_AUTH_GENERIC_OAUTH_ENABLED=true
+      - GF_AUTH_GENERIC_OAUTH_NAME=Dex
+      - GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP=true
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_ID=grafana-client
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=grafana-secret
+      - GF_AUTH_GENERIC_OAUTH_AUTH_URL=http://localhost:5556/dex/auth
+      - GF_AUTH_GENERIC_OAUTH_TOKEN_URL=http://dex:5556/dex/token
+      - GF_AUTH_GENERIC_OAUTH_API_URL=http://dex:5556/dex/userinfo
+      - GF_AUTH_GENERIC_OAUTH_SCOPES=openid profile email groups
+      - GF_AUTH_GENERIC_OAUTH_REDIRECT_URI=http://localhost:3000/login/generic_oauth
+#Added to enable SSO setting
+      - GF_AUTH_GENERIC_OAUTH_ALLOW_ORG_CREATE=true
+      - GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN=true
+      - GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_ORG_ADMIN=true
+#Commented out to avoid overwrites  of SSO setting
+#      - GF_AUTH_GENERIC_OAUTH_ORG_ATTRIBUTE_PATH=groups
+#      - GF_AUTH_GENERIC_OAUTH_ORG_MAPPING=["TeamAlpha-Admins:Alpha:Admin","TeamAlpha-Editors:Alpha:Editor","TeamAlpha-Viewers:Alpha:Viewer"]
+#      - GF_AUTH_GENERIC_OAUTH_EMAIL_ATTRIBUTE_NAME=email
+#      - GF_AUTH_GENERIC_OAUTH_LOGIN_ATTRIBUTE_NAME=preferred_username
+#      - GF_AUTH_GENERIC_OAUTH_NAME_ATTRIBUTE=name
+##      - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Viewer
+##      - GF_USERS_AUTO_ASSIGN_ORG=true
+
+      - GF_LOG_LEVEL=debug
+
+    depends_on:
+      - dex
+
+  # DEX --------------------------------------------------------------------
+  dex:
+    image: ghcr.io/dexidp/dex:v2.42.0
+    platform: linux/amd64
+    #image: my-dex:arm64
+    container_name: dex
+    ports:
+      - "5556:5556"
+    volumes:
+      - ./dex-config.yaml:/etc/dex/config.yaml
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+
+  # PROMETHEUS --------------------------------------------------------------------
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"  
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  # LOKI -----------------------------------------------------------------------
+  loki:
+    image:          grafana/loki:latest
+    container_name: loki
+    ports:          [ "3100:3100/tcp" ]
+    healthcheck:
+      test:         "wget -q --spider 'http://loki:3100/ready' 1>/dev/null 2>&1"
+      interval:     1s
+      timeout:      1s
+      start_period: 20s
+      retries:      60
+    volumes:
+      - ./loki.yml:/etc/loki.yaml:ro
+      - data_loki:/loki:rw
+    command:
+      - -config.expand-env=true
+      - -config.file=/etc/loki.yaml
+    depends_on:
+      grafana:
+        condition: service_healthy
+
+  # ALLOY ----------------------------------------------------------------------
+  alloy:
+    image:          grafana/alloy:latest
+    container_name: alloy
+    ports:          [ "12345:12345/tcp" ]
+    volumes:
+      - ./alloy.hcl:/etc/alloy/config.alloy
+      - /var/log:/logs:ro
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - /etc/alloy/config.alloy
+    depends_on:
+      loki:
+        condition: service_healthy
+
+  # LOCAL APP ----------------------------------------------------------------------
+  local-app:
+    build: ./local-app
+    container_name: local-app
+
+    ports:
+      - "8080:8080"

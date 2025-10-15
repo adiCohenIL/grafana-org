@@ -1,0 +1,32 @@
+{
+  "title": "Example Dashboard",
+  "uid": "f06cfff8-0055-414b-b045-e1112147f452",
+  "tags": [],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "New panel",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "scrape_samples_scraped", "refId": "A" }
+      ],
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 }
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  }
+}

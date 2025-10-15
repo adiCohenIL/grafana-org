@@ -1,0 +1,78 @@
+---
+issuer: http://localhost:5556/dex
+storage:
+  type: memory
+
+web:
+  http: 0.0.0.0:5556
+
+oauth2:
+  skipApprovalScreen: true
+  responseTypes: ["code", "token", "id_token"]
+
+
+staticClients:
+  - id: grafana-client
+    redirectURIs:
+      - http://localhost:3000/login/generic_oauth
+    name: Grafana
+    secret: grafana-secret
+    grantTypes: ["authorization_code", "refresh_token"]
+    responseTypes: ["code", "token", "id_token"]
+    claims:
+      id_token:
+        email: true
+        name: true
+        groups: true
+      userinfo:
+        email: true
+        name: true
+        groups: true
+
+logger:
+  level: debug
+
+connectors:
+  - type: password
+    id: password
+    name: Local password
+    config:
+      users:
+        - email: admin@example.com
+          hash: "$2y$10$0o/zrUcdZVZDAAHmgHl1yu0H8r0AmQFL.DyPPhpDkapEwisfOJw3a"
+          username: admin
+          userID: admin-uuid
+        - email: editor@example.com
+          hash: "$2y$10$0o/zrUcdZVZDAAHmgHl1yu0H8r0AmQFL.DyPPhpDkapEwisfOJw3a"
+          username: editor
+          userID: editor-uuid
+        - email: viewer@example.com
+          hash: "$2y$10$0o/zrUcdZVZDAAHmgHl1yu0H8r0AmQFL.DyPPhpDkapEwisfOJw3a"
+          username: viewer
+          userID: viewer-uuid
+        - email: outsider@example.com
+          hash: "$2y$10$0o/zrUcdZVZDAAHmgHl1yu0H8r0AmQFL.DyPPhpDkapEwisfOJw3a"
+          username: outsider
+          userID: outsider-uuid
+
+staticUserClaims:
+  admin@example.com:
+    groups: ["TeamAlpha-Admins"]
+    name: Admin user
+    preferred_username: admin
+    email: admin@example.com
+  editor@example.com:
+    groups: ["TeamAlpha-Editors"]
+    name: Editor user
+    preferred_username: editor
+    email: editor@example.com
+  viewer@example.com:
+    groups: ["TeamAlpha-Viewers"]
+    name: Viewer user
+    preferred_username: viewer
+    email: viewer@example.com
+  outsider@example.com:
+    groups: ["TeamBeta-Guests"]
+    name: Guest user
+    preferred_username: guest
+    email: outsider@example.com
