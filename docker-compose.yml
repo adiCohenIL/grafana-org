@@ -21,57 +21,85 @@ services:
       - GF_SECURITY_ADMIN_USER=grafana
       - GF_SECURITY_ADMIN_PASSWORD=superuser
       - GF_USERS_DEFAULT_THEME=light
-      - GF_AUTH_GENERIC_OAUTH_ENABLED=true
-      - GF_AUTH_GENERIC_OAUTH_NAME=Dex
-      - GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP=true
-      - GF_AUTH_GENERIC_OAUTH_CLIENT_ID=grafana-client
-      - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=grafana-secret
-      - GF_AUTH_GENERIC_OAUTH_AUTH_URL=http://localhost:5556/dex/auth
-      - GF_AUTH_GENERIC_OAUTH_TOKEN_URL=http://dex:5556/dex/token
-      - GF_AUTH_GENERIC_OAUTH_API_URL=http://dex:5556/dex/userinfo
-      - GF_AUTH_GENERIC_OAUTH_SCOPES=openid profile email groups
-      - GF_AUTH_GENERIC_OAUTH_REDIRECT_URI=http://localhost:3000/login/generic_oauth
-#Added to enable SSO setting
-      - GF_AUTH_GENERIC_OAUTH_ALLOW_ORG_CREATE=true
-      - GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN=true
-      - GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_ORG_ADMIN=true
-#Commented out to avoid overwrites  of SSO setting
-#      - GF_AUTH_GENERIC_OAUTH_ORG_ATTRIBUTE_PATH=groups
-#      - GF_AUTH_GENERIC_OAUTH_ORG_MAPPING=["TeamAlpha-Admins:Alpha:Admin","TeamAlpha-Editors:Alpha:Editor","TeamAlpha-Viewers:Alpha:Viewer"]
-#      - GF_AUTH_GENERIC_OAUTH_EMAIL_ATTRIBUTE_NAME=email
-#      - GF_AUTH_GENERIC_OAUTH_LOGIN_ATTRIBUTE_NAME=preferred_username
-#      - GF_AUTH_GENERIC_OAUTH_NAME_ATTRIBUTE=name
-##      - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Viewer
-##      - GF_USERS_AUTO_ASSIGN_ORG=true
 
+      # Disable direct login (use oauth2-proxy)
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_AUTH_DISABLE_SIGNOUT_MENU=true
+
+      - GF_AUTH_PROXY_ENABLED=true
+      - GF_AUTH_PROXY_HEADER_NAME=X-Email
+      - GF_AUTH_PROXY_HEADER_PROPERTY=email
+      - GF_AUTH_PROXY_AUTO_SIGN_UP=true
+      - GF_AUTH_PROXY_HEADER_NAME_X_GROUPS=X-Groups
+      - GF_SERVER_ROOT_URL=http://localhost:4180
       - GF_LOG_LEVEL=debug
-
     depends_on:
-      - dex
+      - oauth2-proxy
 
-  # DEX --------------------------------------------------------------------
-  dex:
-    image: ghcr.io/dexidp/dex:v2.42.0
-    platform: linux/amd64
-    #image: my-dex:arm64
-    container_name: dex
+  # OAUTH2-PROXY --------------------------------------------------------------------
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    container_name: oauth2-proxy
     ports:
-      - "5556:5556"
-    volumes:
-      - ./dex-config.yaml:/etc/dex/config.yaml
-    command: ["dex", "serve", "/etc/dex/config.yaml"]
+      - "4180:4180"
+    environment:
+      - OAUTH2_PROXY_PROVIDER=oidc
+      - OAUTH2_PROXY_OIDC_ISSUER_URL=http://keycloak:8080/realms/grafana
+      - OAUTH2_PROXY_CLIENT_ID=grafana-client
+      - OAUTH2_PROXY_CLIENT_SECRET=grafana-secret
+      - OAUTH2_PROXY_REDIRECT_URL=http://localhost:4180/oauth2/callback
+      - OAUTH2_PROXY_COOKIE_SECRET=vBlpQlo3Y91U8qEMWLb7MSYKnh2f4XX7LSswar6S2O4=
+      - OAUTH2_PROXY_EMAIL_DOMAINS=*
+      - OAUTH2_PROXY_UPSTREAMS=http://grafana:3000
+      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+      - OAUTH2_PROXY_PASS_ACCESS_TOKEN=true
+      - OAUTH2_PROXY_PASS_USER_HEADERS=true
+      - OAUTH2_PROXY_SET_XAUTHREQUEST=true
+      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+      - OAUTH2_PROXY_ALLOWED_GROUPS=TeamAlpha-Admins,TeamAlpha-Editors,TeamAlpha-Viewers,TeamBeta-Guests
+    depends_on:
+      keycloak:
+        condition: service_healthy
 
-  # PROMETHEUS --------------------------------------------------------------------
 
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
+  # KEYCLOACK --------------------------------------------------------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    container_name: keycloak
+    command: 
+      - start-dev 
+      - --import-realm
+      - --verbose
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=superuser
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./grafana-realm.json:/opt/keycloak/data/import/grafana-realm.json
     ports:
-      - "9090:9090"  
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - "8080:8080"
+    healthcheck:
+      test: >
+        bash -c 'exec 3<>/dev/tcp/localhost/8080 && echo -e "GET /realms/master/.well-known/openid-configuration HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && grep "200 OK" <&3'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:8080/realms/grafana/.well-known/openid-configuration"]
+#      interval: 5s
+#      retries: 20
+
+#  # PROMETHEUS --------------------------------------------------------------------
+#
+#  prometheus:
+#    image: prom/prometheus
+#    container_name: prometheus
+#    volumes:
+#      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+#    ports:
+#      - "9090:9090"  
+#    command:
+#      - '--config.file=/etc/prometheus/prometheus.yml'
 
   # LOKI -----------------------------------------------------------------------
   loki:
@@ -111,9 +139,9 @@ services:
         condition: service_healthy
 
   # LOCAL APP ----------------------------------------------------------------------
-  local-app:
-    build: ./local-app
-    container_name: local-app
-
-    ports:
-      - "8080:8080"
+#  local-app:
+#    build: ./local-app
+#    container_name: local-app
+#
+#    ports:
+#      - "8080:8080"
