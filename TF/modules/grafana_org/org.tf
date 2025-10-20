@@ -25,7 +25,7 @@ resource "grafana_organization_preferences" "base" {
   home_dashboard_uid = grafana_dashboard.base.uid
 }
 
-resource "grafana_sso_settings" "dex_sso" {
+resource "grafana_sso_settings" "keycloack_sso" {
   provider_name = "generic_oauth"
 
   oauth2_settings {
@@ -36,8 +36,9 @@ resource "grafana_sso_settings" "dex_sso" {
     token_url     = local.token_url
     api_url       = local.api_url
     allow_sign_up = true
-    scopes        = "openid profile email groups"
+    #scopes        = "openid profile email groups"
 
+    scopes        = "openid profile email"
     name_attribute_path  = "name"
     login_attribute_path = "preferred_username"
     email_attribute_name = "email"

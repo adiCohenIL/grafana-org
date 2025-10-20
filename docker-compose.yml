@@ -22,45 +22,30 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=superuser
       - GF_USERS_DEFAULT_THEME=light
 
-      # Disable direct login (use oauth2-proxy)
-      - GF_AUTH_DISABLE_LOGIN_FORM=true
-      - GF_AUTH_DISABLE_SIGNOUT_MENU=true
+      # Enable Grafana's built-in Keycloak OIDC login
+      - GF_AUTH_GENERIC_OAUTH_ENABLED=true
+      - GF_AUTH_GENERIC_OAUTH_NAME=Keycloak
+      - GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP=true
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_ID=grafana
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=m92fecXo3OjKNAvdixUHTrVlG04hwiaL
+      #- GF_AUTH_GENERIC_OAUTH_SCOPES=openid profile email groups
+      - GF_AUTH_GENERIC_OAUTH_DEBUG=true
+      - GF_AUTH_GENERIC_OAUTH_SCOPES=openid profile email
+      - GF_AUTH_GENERIC_OAUTH_AUTH_URL=http://localhost:8080/realms/grafana/protocol/openid-connect/auth
+      - GF_AUTH_GENERIC_OAUTH_TOKEN_URL=http://keycloak:8080/realms/grafana/protocol/openid-connect/token
+      - GF_AUTH_GENERIC_OAUTH_API_URL=http://keycloak:8080/realms/grafana/protocol/openid-connect/userinfo
 
-      - GF_AUTH_PROXY_ENABLED=true
-      - GF_AUTH_PROXY_HEADER_NAME=X-Email
-      - GF_AUTH_PROXY_HEADER_PROPERTY=email
-      - GF_AUTH_PROXY_AUTO_SIGN_UP=true
-      - GF_AUTH_PROXY_HEADER_NAME_X_GROUPS=X-Groups
-      - GF_SERVER_ROOT_URL=http://localhost:4180
+      #Keep login form enabled
+      - GF_AUTH_DISABLE_LOGIN_FORM=false
+      - GF_AUTH_DISABLE_SIGNOUT_MENU=false
+
+      # Logging & base URL
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+
       - GF_LOG_LEVEL=debug
-    depends_on:
-      - oauth2-proxy
-
-  # OAUTH2-PROXY --------------------------------------------------------------------
-  oauth2-proxy:
-    image: quay.io/oauth2-proxy/oauth2-proxy:latest
-    container_name: oauth2-proxy
-    ports:
-      - "4180:4180"
-    environment:
-      - OAUTH2_PROXY_PROVIDER=oidc
-      - OAUTH2_PROXY_OIDC_ISSUER_URL=http://keycloak:8080/realms/grafana
-      - OAUTH2_PROXY_CLIENT_ID=grafana-client
-      - OAUTH2_PROXY_CLIENT_SECRET=grafana-secret
-      - OAUTH2_PROXY_REDIRECT_URL=http://localhost:4180/oauth2/callback
-      - OAUTH2_PROXY_COOKIE_SECRET=vBlpQlo3Y91U8qEMWLb7MSYKnh2f4XX7LSswar6S2O4=
-      - OAUTH2_PROXY_EMAIL_DOMAINS=*
-      - OAUTH2_PROXY_UPSTREAMS=http://grafana:3000
-      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
-      - OAUTH2_PROXY_PASS_ACCESS_TOKEN=true
-      - OAUTH2_PROXY_PASS_USER_HEADERS=true
-      - OAUTH2_PROXY_SET_XAUTHREQUEST=true
-      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
-      - OAUTH2_PROXY_ALLOWED_GROUPS=TeamAlpha-Admins,TeamAlpha-Editors,TeamAlpha-Viewers,TeamBeta-Guests
     depends_on:
       keycloak:
         condition: service_healthy
-
 
   # KEYCLOACK --------------------------------------------------------------------
   keycloak:
@@ -74,7 +59,7 @@ services:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=superuser
     volumes:
-      - ./grafana-realm.json:/opt/keycloak/data/import/grafana-realm.json
+      - ./grafana-realm-new.json:/opt/keycloak/data/import/grafana-realm.json:ro
     ports:
       - "8080:8080"
     healthcheck:
@@ -84,10 +69,6 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
-#    healthcheck:
-#      test: ["CMD", "curl", "-f", "http://localhost:8080/realms/grafana/.well-known/openid-configuration"]
-#      interval: 5s
-#      retries: 20
 
 #  # PROMETHEUS --------------------------------------------------------------------
 #

@@ -3,13 +3,13 @@
 #}
 
 locals {
-  # Dex
-  oauth_name          = "Dex"
-  oauth_client_id     = "grafana-client"
-  oauth_client_secret = "grafana-secret"
-  auth_url            = "http://localhost:5556/dex/auth"
-  token_url           = "http://dex:5556/dex/token"
-  api_url             = "http://dex:5556/dex/userinfo"
+  # Keycloak
+  oauth_name          = "Keycloak"
+  oauth_client_id     = "grafana"
+  oauth_client_secret = "m92fecXo3OjKNAvdixUHTrVlG04hwiaL"
+  auth_url            = "http://localhost:8080/realms/grafana/protocol/openid-connect/auth"
+  token_url           = "http://localhost:8080/realms/grafana/protocol/openid-connect/token"
+  api_url             = "http://localhost:8080/realms/grafana/protocol/openid-connect/userinfo"
 
   # OKTA
   #oauth_name          = "Okta""
