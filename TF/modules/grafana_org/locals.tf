@@ -7,9 +7,9 @@ locals {
   oauth_name          = "Keycloak"
   oauth_client_id     = "grafana"
   oauth_client_secret = "m92fecXo3OjKNAvdixUHTrVlG04hwiaL"
-  auth_url            = "http://localhost:8080/realms/grafana/protocol/openid-connect/auth"
-  token_url           = "http://localhost:8080/realms/grafana/protocol/openid-connect/token"
-  api_url             = "http://localhost:8080/realms/grafana/protocol/openid-connect/userinfo"
+  auth_url            = "http://keycloak:8080/realms/grafana/protocol/openid-connect/auth"
+  token_url           = "http://keycloak:8080/realms/grafana/protocol/openid-connect/token"
+  api_url             = "http://keycloak:8080/realms/grafana/protocol/openid-connect/userinfo"
 
   # OKTA
   #oauth_name          = "Okta""
