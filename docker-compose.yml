@@ -33,14 +33,11 @@ services:
       - GF_AUTH_GENERIC_OAUTH_USE_PKCE=true
       - GF_AUTH_GENERIC_OAUTH_GROUPS_ATTRIBUTE_PATH=groups
       - GF_AUTH_GENERIC_OAUTH_SCOPES=openid profile email
-#
+
       - GF_AUTH_GENERIC_OAUTH_AUTH_URL=http://keycloak:8080/realms/grafana/protocol/openid-connect/auth
       - GF_AUTH_GENERIC_OAUTH_TOKEN_URL=http://keycloak:8080/realms/grafana/protocol/openid-connect/token
       - GF_AUTH_GENERIC_OAUTH_API_URL=http://keycloak:8080/realms/grafana/protocol/openid-connect/userinfo
       - GF_AUTH_GENERIC_OAUTH_REDIRECT_URI=http://localhost:3000/login/generic_oauth
-      #- GF_AUTH_GENERIC_OAUTH_AUTH_URL=http://localhost:8080/realms/grafana/protocol/openid-connect/auth
-      #- GF_AUTH_GENERIC_OAUTH_TOKEN_URL=http://keycloak:8080/realms/grafana/protocol/openid-connect/token
-      #- GF_AUTH_GENERIC_OAUTH_API_URL=http://keycloak:8080/realms/grafana/protocol/openid-connect/userinfo
 
       - GF_AUTH_GENERIC_OAUTH_EMAIL_ATTRIBUTE_NAME=email
       - GF_AUTH_GENERIC_OAUTH_LOGIN_ATTRIBUTE_PATH=preferred_username
@@ -70,7 +67,7 @@ services:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=superuser
     volumes:
-      - ./grafana-realm-new.json:/opt/keycloak/data/import/grafana-realm.json:ro
+      - ./grafana-realm.json:/opt/keycloak/data/import/grafana-realm.json:ro
     ports:
       - "8080:8080"
     healthcheck:

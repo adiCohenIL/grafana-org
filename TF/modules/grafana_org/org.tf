@@ -11,18 +11,37 @@ resource "grafana_folder" "org_folder" {
   org_id   = grafana_organization.org_name.org_id
 }
 
+#DO NOT have header  X-Grafana-Org-Id set 
 resource "grafana_dashboard" "base" {
+  provider = grafana.new_org
   folder      = grafana_folder.org_folder.id
   org_id      = grafana_organization.org_name.org_id
   config_json = file("${path.module}/dashboard.json")
 }
 
 resource "grafana_organization_preferences" "base" {
+  provider = grafana.new_org
   theme              = "dark"
   timezone           = "utc"
   week_start         = "monday"
   org_id             = grafana_organization.org_name.org_id
   home_dashboard_uid = grafana_dashboard.base.uid
+}
+
+resource "grafana_data_source" "loki" {
+  provider = grafana.new_org
+  name      = "Loki-${grafana_organization.org_name.org_id}"
+  type      = "loki"
+  url       = "http://loki:3100"
+  access_mode    = "proxy"
+  is_default = false
+  json_data_encoded = {
+    httpHeaderName1 = "X-Scope-OrgID"
+  }
+
+  secure_json_data_encoded = {
+    httpHeaderValue1 = "${var.org_name}"
+  }
 }
 
 resource "grafana_sso_settings" "keycloack_sso" {
