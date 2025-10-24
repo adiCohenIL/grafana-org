@@ -623,10 +623,11 @@
       "oidc.ciba.grant.enabled" : "false",
       "client.secret.creation.time" : "1760708520",
       "backchannel.logout.session.required" : "true",
-      "post.logout.redirect.uris" : "http://localhost:3000/login/generic_oauth",
       "oauth2.device.authorization.grant.enabled" : "false",
       "display.on.consent.screen" : "false",
-      "backchannel.logout.revoke.offline.tokens" : "false"
+      "backchannel.logout.revoke.offline.tokens" : "false",
+      "frontchannel.logout.url": "http://localhost:3000/logout",
+      "post.logout.redirect.uris" : "http://localhost:3000/login/generic_oauth"
     },
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : true,

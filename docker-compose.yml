@@ -28,7 +28,6 @@ services:
       - GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP=true
       - GF_AUTH_GENERIC_OAUTH_CLIENT_ID=grafana
       - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=m92fecXo3OjKNAvdixUHTrVlG04hwiaL
-      #- GF_AUTH_GENERIC_OAUTH_SCOPES=openid profile email groups
       - GF_AUTH_GENERIC_OAUTH_DEBUG=true
       - GF_AUTH_GENERIC_OAUTH_USE_PKCE=true
       - GF_AUTH_GENERIC_OAUTH_GROUPS_ATTRIBUTE_PATH=groups
@@ -38,7 +37,7 @@ services:
       - GF_AUTH_GENERIC_OAUTH_TOKEN_URL=http://keycloak:8080/realms/grafana/protocol/openid-connect/token
       - GF_AUTH_GENERIC_OAUTH_API_URL=http://keycloak:8080/realms/grafana/protocol/openid-connect/userinfo
       - GF_AUTH_GENERIC_OAUTH_REDIRECT_URI=http://localhost:3000/login/generic_oauth
-
+      - GF_AUTH_GENERIC_OAUTH_SIGNOUT_REDIRECT_URL=http://keycloak:8080/realms/grafana/protocol/openid-connect/logout?redirect_uri=http://localhost:3000/login
       - GF_AUTH_GENERIC_OAUTH_EMAIL_ATTRIBUTE_NAME=email
       - GF_AUTH_GENERIC_OAUTH_LOGIN_ATTRIBUTE_PATH=preferred_username
       - GF_AUTH_GENERIC_OAUTH_NAME_ATTRIBUTE_PATH=name
