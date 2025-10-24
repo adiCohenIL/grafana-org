@@ -28,21 +28,64 @@ resource "grafana_organization_preferences" "base" {
   home_dashboard_uid = grafana_dashboard.base.uid
 }
 
-resource "grafana_data_source" "loki" {
+resource "grafana_data_source" "ds" {
   provider = grafana.new_org
-  name      = "Loki-${grafana_organization.org_name.org_id}"
-  type      = "loki"
-  url       = "http://loki:3100"
+
+#  for_each = local.data_sources
+  for_each = local.data_source_env_flat
+  name        = "${each.value.display_name}-${var.org_name}"
+  type        = each.value.type
+  url         = "${each.value.base_url}:${each.value.port}"
   access_mode    = "proxy"
   is_default = false
-  json_data_encoded = {
-    httpHeaderName1 = "X-Scope-OrgID"
-  }
 
-  secure_json_data_encoded = {
-    httpHeaderValue1 = "${var.org_name}"
+  http_headers = {
+    "X-Scope-OrgID" = var.org_name
   }
+  org_id   = grafana_organization.org_name.org_id
 }
+
+#INITIAL DS NOT DRY#resource "grafana_data_source" "loki" {
+#INITIAL DS NOT DRY#  provider = grafana.new_org
+#INITIAL DS NOT DRY#  name      = "Loki-${grafana_organization.org_name.org_id}"
+#INITIAL DS NOT DRY#  type      = "loki"
+#INITIAL DS NOT DRY#  url       = "http://loki:3100"
+#INITIAL DS NOT DRY#  access_mode    = "proxy"
+#INITIAL DS NOT DRY#  is_default = false
+#INITIAL DS NOT DRY#
+#INITIAL DS NOT DRY#  http_headers = {
+#INITIAL DS NOT DRY#    "X-Scope-OrgID" = var.org_name
+#INITIAL DS NOT DRY#  }
+#INITIAL DS NOT DRY#  org_id   = grafana_organization.org_name.org_id
+#INITIAL DS NOT DRY#}
+#INITIAL DS NOT DRY#
+#INITIAL DS NOT DRY#resource "grafana_data_source" "tempo" {
+#INITIAL DS NOT DRY#  provider = grafana.new_org
+#INITIAL DS NOT DRY#  name        = "Tempo"
+#INITIAL DS NOT DRY#  type        = "tempo"
+#INITIAL DS NOT DRY#  url         = "http://tempo:3200"
+#INITIAL DS NOT DRY#  access_mode = "proxy"
+#INITIAL DS NOT DRY#  is_default  = false
+#INITIAL DS NOT DRY#
+#INITIAL DS NOT DRY#  http_headers = {
+#INITIAL DS NOT DRY#    "X-Scope-OrgID" = var.org_name
+#INITIAL DS NOT DRY#  }
+#INITIAL DS NOT DRY#  org_id   = grafana_organization.org_name.org_id
+#INITIAL DS NOT DRY#}
+#INITIAL DS NOT DRY#
+#INITIAL DS NOT DRY#resource "grafana_data_source" "mimir" {
+#INITIAL DS NOT DRY#  provider = grafana.new_org
+#INITIAL DS NOT DRY#  name        = "Mimir"
+#INITIAL DS NOT DRY#  type        = "prometheus"
+#INITIAL DS NOT DRY#  url         = "https://mimir.example.com"
+#INITIAL DS NOT DRY#  access_mode = "proxy"
+#INITIAL DS NOT DRY#  is_default  = false
+#INITIAL DS NOT DRY#
+#INITIAL DS NOT DRY#  http_headers = {
+#INITIAL DS NOT DRY#    "X-Scope-OrgID" = var.org_name
+#INITIAL DS NOT DRY#  }
+#INITIAL DS NOT DRY#  org_id   = grafana_organization.org_name.org_id
+#INITIAL DS NOT DRY#}
 
 resource "grafana_sso_settings" "keycloack_sso" {
   provider_name = "generic_oauth"

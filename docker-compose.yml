@@ -1,4 +1,4 @@
-name: grafana_rights
+name: grafana_org
 
 volumes:
   data_grafana:
