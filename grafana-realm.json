@@ -627,7 +627,7 @@
       "display.on.consent.screen" : "false",
       "backchannel.logout.revoke.offline.tokens" : "false",
       "frontchannel.logout.url": "http://localhost:3000/logout",
-      "post.logout.redirect.uris" : "http://localhost:3000/login/generic_oauth"
+      "post.logout.redirect.uris" : "http://localhost:3000/login http://localhost:3000/login/generic_oauth"
     },
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : true,
