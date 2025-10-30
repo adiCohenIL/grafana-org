@@ -30,6 +30,11 @@ variable "grafana_url" {
   description = "grafana url"
   type        = string
 }
+##
+##variable "get_setting" {
+##  description = "dummy variable used to enforce  fetch of data before module"
+##  type        = string
+##}
 
 #variable okta_domain {
 #  description = "Okta domain for discovery"

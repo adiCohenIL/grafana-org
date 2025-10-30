@@ -20,21 +20,24 @@ locals {
   #token_url           = local.okta_openid["token_endpoint"]
   #api_url             = local.okta_openid["userinfo_endpoint"]
 
-  data_sources ={
+  data_sources = {
     loki = {
-      type = "loki"
-      base_url = "http://loki"
-      port     = 3100
+      type           = "loki"
+      base_url       = "https://loki"
+      local_base_url = "http://monitoring-mmm-loki-gateway"
+      port           = 3100
     }
     mimir = {
-      type = "prometheus"
-      base_url = "http://mimir"
-      port     = 9009
+      type           = "prometheus"
+      base_url       = "https://mimir"
+      local_base_url = "http://monitoring-mmm-loki-gateway"
+      port           = 9009
     }
     tempo = {
-      type = "tempo"
-      base_url = "http://mimir"
-      port     = 3200
+      type           = "tempo"
+      base_url       = "https://mimir"
+      local_base_url = "http://monitoring-mmm-loki-gateway"
+      port           = 3200
     }
   }
 
@@ -44,7 +47,7 @@ locals {
     datasource => datasource == "mimir" ? "Mimir" : title(values.type)
   }
 
-  environments = ["dev", "stage", "prod"]
+  environments = ["dev", "stage", "prod", "local"]
 
   # Build env-specific data sources by adding env attribute to each DS
   data_source_env_map = {
@@ -52,8 +55,15 @@ locals {
     env => {
       for ds_key, ds_val in local.data_sources :
       "${ds_key}-${env}" => merge(ds_val, {
-        env = env
-        display_name = "${local.data_source_names[ds_key]}-${env}"
+        env          = env
+        display_name = "${local.data_source_names[ds_key]}-${upper(env)}"
+        url = (
+          env == "local" ?
+          # Local pattern
+          "${ds_val.local_base_url}" :
+          # Cloud pattern
+          "${ds_val.base_url}-${lower(env)}.mmm.azure.aaa.com${ds_key == "mimir" ? "/prometheus" : ""}"
+        )
       })
     }
   }
