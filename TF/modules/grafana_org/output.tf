@@ -18,11 +18,3 @@ output "dashboard_uid" {
   description = "Grafana dashbord uid"
 }
 
-
-
-output "org_mapping_applied" {
-  description = "Grafana org_mapping setting"
-  value = [for s in grafana_sso_settings.keycloack_sso.oauth2_settings : s.org_mapping][0]
-}
-
-
